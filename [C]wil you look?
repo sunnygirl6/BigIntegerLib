@@ -1,0 +1,288 @@
+#include <stdio.h>
+#include <stdarg.h>
+typedef struct _RouteData {
+	short int number;
+	char depart_st[16];
+	char arrival_st[16];
+	short int dep_hh, dep_mm;
+	short int arr_hh, arr_mm;
+} RouteData;
+
+void scan_check(short int *a, short int low_bound, short int up_bound);
+void time_check(short int *hh, short int *mm);
+void str_check(char *str);
+
+void scanData(RouteData *Var);
+void printData(RouteData Var[], int size);
+
+int partition(int cmp(RouteData, RouteData), RouteData *Var, int l, int r, short int dir);
+void swap(RouteData *a, RouteData *b);
+void quick_sort(int cmp(RouteData, RouteData), RouteData *Var, int l, int r, short int dir);
+
+int num_cmp(RouteData Var1, RouteData Var2);
+int dep_st_cmp(RouteData Var1, RouteData Var2);
+int arr_st_cmp(RouteData Var1, RouteData Var2);
+int time_dep_cmp(RouteData Var1, RouteData Var2);
+int time_arr_cmp(RouteData Var1, RouteData Var2);
+int cursor_move(int begin, int end);
+int menu(RouteData *Var, int size);
+int min(int a, int b);
+int main(void)
+{
+	short int route_num;
+	printf("Input the number of routes\n");
+	scan_check(&route_num, 0, 1000);
+
+	RouteData *Route = (RouteData *)malloc(route_num * sizeof(RouteData));
+	size_t i;
+	for (i = 0; i < route_num; i++)
+	{
+		scanData(&(Route[i]));
+	}
+	while (menu(Route, route_num)) ;
+	_clrscr();
+	free(Route);
+	return 0;
+}
+void scan_check(short int *a, short int low_bound, short int up_bound)
+{
+	do
+	{
+		fflush(stdin);
+	} while (scanf("%hu", a) != 1 || *a < low_bound || *a > up_bound);
+}
+void time_check(short int *hh, short int *mm)
+{
+	char time[5];
+	while (1)
+	{
+		fflush(stdin);
+		gets(time);
+		if (strlen(time) != 5)
+			continue;
+		short int var;
+		char *p = time;
+		var = atoi(p);
+		if (var > 23 || var < 0)
+			continue;
+		*hh = var;
+		p += 2;
+		if (*p != ':')
+			continue;
+		p++;
+		var = atoi(p);
+		if (var > 59 || var < 0)
+			continue;
+		*mm = var;
+		break;
+	}
+}
+void str_check(char *str)
+{
+	do
+	{
+		fflush(stdin);
+		gets(str);
+	} while (strlen(str) > 15);
+}
+void scanData(RouteData *Var)
+{
+	printf("Enter the number of the route\n");
+	scan_check(&(Var->number), 0, 9999);
+	printf("Enter the daparture station\n");
+	str_check((Var->depart_st));
+	printf("Enter the arrival station\n");
+	str_check((Var->arrival_st));
+	printf("Enter the time of departure as hh:mm\n");
+	time_check(&(Var->dep_hh), &(Var->dep_mm));
+	printf("Enter the time of arrival as hh:mm\n");
+	time_check(&(Var->arr_hh), &(Var->arr_mm));
+
+}
+void printData(RouteData Var[], int size)
+{
+	_clrscr();
+	for (size_t i = 0; i < size; i++)
+	{
+		printf("The route number: %hu;\n", Var[i].number);
+		printf("The departure station: %s;\n", Var[i].depart_st);
+		printf("The time of departure: %hu:%hu;\n", Var[i].dep_hh, Var[i].dep_mm);
+		printf("The arrival station: %s;\n", Var[i].arrival_st);
+		printf("The time of arrival: %hu:%hu;\n\n", Var[i].arr_hh, Var[i].arr_mm);
+	}
+	_getch();
+}
+
+int partition(int cmp(RouteData, RouteData), RouteData *Var, int l, int r, short int dir)
+{
+	int i = l, j = r;
+	while (i <= j)
+	{
+		if (dir)
+		{
+			while (cmp(Var[i], Var[(l + r) / 2]) < 0)
+				i++;
+			while (cmp(Var[j], Var[(l + r) / 2]) > 0)
+				j--;
+		}
+		else
+		{
+			while (cmp(Var[i], Var[(l + r) / 2]) > 0)
+				i++;
+			while (cmp(Var[j], Var[(l + r) / 2]) < 0)
+				j--;
+		}
+
+		if (i >= j)
+			break;
+		swap(&(Var[i]), &(Var[j]));
+		i++;
+		j--;
+	}
+	return j;
+}
+void quick_sort(int cmp(RouteData, RouteData), RouteData *Var, int l, int r, short int dir)
+{
+	if (l < r)
+	{
+		int q = partition(cmp, Var, l, r, dir);
+		quick_sort(cmp, Var, l, q, dir);
+		quick_sort(cmp, Var, q + 1, r, dir);
+	}
+}
+void swap(RouteData *a, RouteData *b)
+{
+	RouteData var = *a;
+	*a = *b;
+	*b = var;
+}
+int num_cmp(RouteData Var1, RouteData Var2)
+{
+	if ((Var1.number) < (Var2.number))
+		return -1;
+	else if ((Var1.number) == (Var2.number))
+		return 0;
+	else
+		return 1;
+}
+
+int dep_st_cmp(RouteData Var1, RouteData Var2)
+{
+	return strncmp(Var1.depart_st, Var2.depart_st, min(strlen(Var1.depart_st), strlen(Var2.depart_st)));
+}
+int arr_st_cmp(RouteData Var1, RouteData Var2)
+{
+	return strncmp(Var1.arrival_st, Var2.arrival_st, min(strlen(Var1.arrival_st), strlen(Var2.arrival_st)));
+}
+int time_arr_cmp(RouteData Var1, RouteData Var2)
+{
+	if (Var1.arr_hh == Var2.arr_hh)
+		return Var1.arr_mm - Var2.arr_mm;
+	return Var1.arr_hh - Var2.arr_hh;
+}
+int time_dep_cmp(RouteData Var1, RouteData Var2)
+{
+	if (Var1.dep_hh == Var2.dep_hh)
+		return Var1.dep_mm - Var2.dep_mm;
+	return Var1.dep_hh - Var2.dep_hh;
+}
+int min(int a, int b)
+{
+	return (a < b) ? a : b;
+}
+
+int menu(RouteData *Var, int size)
+{
+	_clrscr();
+	printf("Choose the field to sort by:");
+	printf("\n1.By number;\n2.By departure station;\n3.By arrival station;\n4.By departure time;\n5.By arrival time;\n6.End programm.");
+	size_t j = cursor_move(2, 7);
+	if (j != 5)
+	{
+		int (*cmp[5]) (RouteData Var1, RouteData Var2);
+		cmp[0] = num_cmp;
+		cmp[1] = dep_st_cmp;
+		cmp[2] = arr_st_cmp;
+		cmp[3] = time_dep_cmp;
+		cmp[4] = time_arr_cmp;
+		short int dir;
+		_clrscr();
+		printf("Enter the direction of our sort: 0 for decrease, else numbers for increase:\n");
+		scan_check(&dir, -100, 100);
+		quick_sort(cmp[j], Var, 0, size - 1, dir);
+		printData(Var, size);
+		return 1;
+	}
+	return 0;
+}
+int cursor_move(int begin, int end)
+{
+	_gotoxy(1, 2);
+	int flag = 1, a, choice = begin;
+	while (flag)
+	{
+		a = _getch();
+		switch (a)
+		{
+			case 72:
+			{
+				choice--;
+				if (choice == 1)
+					choice = end;
+				_gotoxy(1, choice);
+				break;
+			}
+			case 80:
+			{
+				choice++;
+				if (choice > end)
+					choice = 2;
+				_gotoxy(1, choice);
+			}
+				break;
+			case 13:
+			{
+				flag = 0;
+				return choice - 2;
+			}
+		}
+	}
+}
+/*
+
+   100
+   Bb
+   Ff
+   11:12
+   12:12
+   2
+   Fa
+   Hq
+   13:23
+   23:45
+   1
+   Sa
+   ENd str
+   11:13
+   14:12
+   6
+   Ba
+   Dvbm kdmgbk
+   23:23
+   23:40
+   100
+   Bb
+   ENd str
+   11:11
+   12:12
+   2
+   Ca
+   Nvbm kdmgbk
+   13:24
+   13:45
+   6
+   Ba
+   Odvbm kdmgbk
+   14:23
+   23:42
+ */
